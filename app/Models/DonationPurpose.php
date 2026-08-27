@@ -1,4 +1,5 @@
 <?php
 namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
-class DonationPurpose extends Model { protected $fillable = ['name_bn','name_en','description','is_active','sort_order']; protected function casts(): array { return ['is_active'=>'boolean']; } }
+use Illuminate\Database\Eloquent\Relations\HasMany;
+class DonationPurpose extends Model { protected $fillable = ['name_bn','name_en','description','is_active','sort_order']; protected function casts(): array { return ['is_active'=>'boolean']; } public function donations(): HasMany { return $this->hasMany(Donation::class); } }
