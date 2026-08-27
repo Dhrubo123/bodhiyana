@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\AdminActivityLog;
 use App\Models\BankAccount;
+use App\Models\Banner;
 use App\Models\Donation;
 use App\Models\DonationPurpose;
 use App\Models\Donor;
@@ -19,6 +20,11 @@ use Illuminate\Validation\Rule;
 
 class AdminManagementController extends Controller
 {
+    private const WEBSITE_TEXT_KEYS = [
+        'bihar_name', 'site_title', 'bihar_description', 'bihar_history', 'activities',
+        'address', 'contact_phone', 'email', 'facebook', 'youtube', 'google_maps',
+    ];
+
     public function donors(Request $request): JsonResponse
     {
         $search = trim((string) $request->query('search'));
@@ -64,6 +70,51 @@ class AdminManagementController extends Controller
         return response()->json(Event::latest('event_date')->get());
     }
 
+    public function banners(): JsonResponse
+    {
+        return response()->json(Banner::orderBy('display_order')->latest()->get());
+    }
+
+    public function storeBanner(Request $request): JsonResponse
+    {
+        $data = $this->bannerData($request, true);
+        $data['desktop_image'] = $request->file('desktop_image')->store('banners', 'public');
+        if ($request->hasFile('mobile_image')) $data['mobile_image'] = $request->file('mobile_image')->store('banners', 'public');
+        $banner = Banner::create($data);
+        $this->log($request, 'banner_created', $banner, 'Website banner created');
+        return response()->json($banner, 201);
+    }
+
+    public function updateBanner(Request $request, Banner $banner): JsonResponse
+    {
+        $data = $this->bannerData($request, false);
+
+        if ($request->hasFile('desktop_image')) {
+            Storage::disk('public')->delete($banner->desktop_image);
+            $data['desktop_image'] = $request->file('desktop_image')->store('banners', 'public');
+        }
+        if ($request->boolean('remove_mobile_image') && $banner->mobile_image) {
+            Storage::disk('public')->delete($banner->mobile_image);
+            $data['mobile_image'] = null;
+        }
+        if ($request->hasFile('mobile_image')) {
+            if ($banner->mobile_image) Storage::disk('public')->delete($banner->mobile_image);
+            $data['mobile_image'] = $request->file('mobile_image')->store('banners', 'public');
+        }
+
+        $banner->update($data);
+        $this->log($request, 'banner_updated', $banner, 'Website banner updated');
+        return response()->json($banner->fresh());
+    }
+
+    public function destroyBanner(Request $request, Banner $banner): JsonResponse
+    {
+        Storage::disk('public')->delete(array_filter([$banner->desktop_image, $banner->mobile_image]));
+        $this->log($request, 'banner_deleted', $banner, 'Website banner deleted');
+        $banner->delete();
+        return response()->json(['message' => 'ব্যানার মুছে ফেলা হয়েছে।']);
+    }
+
     public function storeEvent(Request $request): JsonResponse
     {
         $event = Event::create($this->eventData($request));
@@ -87,16 +138,30 @@ class AdminManagementController extends Controller
 
     public function website(): JsonResponse
     {
-        return response()->json(WebsiteSetting::pluck('value', 'key'));
+        $settings = WebsiteSetting::pluck('value', 'key')->all();
+        $settings['logo_url'] = $this->websiteAssetUrl($settings['logo_path'] ?? null);
+        $settings['favicon_url'] = $this->websiteAssetUrl($settings['favicon_path'] ?? null);
+        return response()->json($settings);
     }
 
     public function updateWebsite(Request $request): JsonResponse
     {
-        $data = $request->validate(['settings' => ['required', 'array'], 'settings.*' => ['nullable', 'string', 'max:5000']]);
+        $data = $request->validate([
+            'settings' => ['required', 'array'],
+            'settings.*' => ['nullable', 'string', 'max:5000'],
+            'logo' => ['nullable', 'file', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
+            'favicon' => ['nullable', 'file', 'mimes:ico,png,jpg,jpeg,webp', 'max:1024'],
+            'remove_logo' => ['nullable', 'boolean'],
+            'remove_favicon' => ['nullable', 'boolean'],
+        ]);
+
         foreach ($data['settings'] as $key => $value) {
-            abort_unless(in_array($key, ['bihar_name', 'bihar_description', 'bihar_history', 'activities', 'address', 'contact_phone', 'email', 'facebook', 'youtube', 'google_maps']), 422);
+            abort_unless(in_array($key, self::WEBSITE_TEXT_KEYS, true), 422);
             WebsiteSetting::updateOrCreate(['key' => $key], ['value' => $value]);
         }
+
+        $this->updateWebsiteAsset($request, 'logo');
+        $this->updateWebsiteAsset($request, 'favicon');
         $this->log($request, 'website_updated', null, 'Website content updated');
         return $this->website();
     }
@@ -187,6 +252,25 @@ class AdminManagementController extends Controller
         return $request->validate(['title_bn' => ['required', 'string', 'max:200'], 'title_en' => ['nullable', 'string', 'max:200'], 'description' => ['nullable', 'string', 'max:3000'], 'event_date' => ['required', 'date'], 'event_time' => ['nullable', 'date_format:H:i'], 'location' => ['nullable', 'string', 'max:250'], 'is_active' => ['required', 'boolean']]);
     }
 
+    private function bannerData(Request $request, bool $creating): array
+    {
+        return $request->validate([
+            'title_bn' => ['required', 'string', 'max:200'],
+            'title_en' => ['nullable', 'string', 'max:200'],
+            'subtitle_bn' => ['nullable', 'string', 'max:1000'],
+            'subtitle_en' => ['nullable', 'string', 'max:1000'],
+            'button_text' => ['nullable', 'string', 'max:100'],
+            'button_link' => ['nullable', 'string', 'max:500'],
+            'display_order' => ['required', 'integer', 'min:0'],
+            'is_active' => ['required', 'boolean'],
+            'start_date' => ['nullable', 'date'],
+            'end_date' => ['nullable', 'date', 'after_or_equal:start_date'],
+            'desktop_image' => [$creating ? 'required' : 'nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
+            'mobile_image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
+            'remove_mobile_image' => ['nullable', 'boolean'],
+        ]);
+    }
+
     private function bankData(Request $request): array
     {
         return $request->validate(['bank_name' => ['required', 'string', 'max:150'], 'account_name' => ['required', 'string', 'max:150'], 'account_number' => ['required', 'string', 'max:100'], 'branch_name' => ['nullable', 'string', 'max:150'], 'routing_number' => ['nullable', 'string', 'max:100'], 'swift_code' => ['nullable', 'string', 'max:50'], 'instructions' => ['nullable', 'string', 'max:2000'], 'display_order' => ['required', 'integer', 'min:0'], 'is_active' => ['required', 'boolean']]);
@@ -195,5 +279,31 @@ class AdminManagementController extends Controller
     private function log(Request $request, string $action, mixed $entity, string $description): void
     {
         AdminActivityLog::create(['admin_user_id' => $request->user()->id, 'action' => $action, 'entity_type' => $entity ? $entity::class : null, 'entity_id' => $entity?->id, 'description' => $description, 'ip_address' => $request->ip()]);
+    }
+
+    private function updateWebsiteAsset(Request $request, string $asset): void
+    {
+        $key = $asset.'_path';
+        $current = WebsiteSetting::where('key', $key)->value('value');
+
+        if ($request->boolean('remove_'.$asset) && $current) {
+            Storage::disk('public')->delete($current);
+            WebsiteSetting::updateOrCreate(['key' => $key], ['value' => null]);
+            $current = null;
+        }
+
+        if ($request->hasFile($asset)) {
+            if ($current) Storage::disk('public')->delete($current);
+            WebsiteSetting::updateOrCreate([
+                'key' => $key,
+            ], [
+                'value' => $request->file($asset)->store('website', 'public'),
+            ]);
+        }
+    }
+
+    private function websiteAssetUrl(?string $path): ?string
+    {
+        return $path ? '/storage/'.ltrim($path, '/') : null;
     }
 }

@@ -11,6 +11,7 @@ import AdminDonorsView from './views/admin/AdminDonorsView.vue'
 import AdminPurposesView from './views/admin/AdminPurposesView.vue'
 import AdminReceiptsView from './views/admin/AdminReceiptsView.vue'
 import AdminEventsView from './views/admin/AdminEventsView.vue'
+import AdminBannersView from './views/admin/AdminBannersView.vue'
 import AdminWebsiteView from './views/admin/AdminWebsiteView.vue'
 import AdminDonationSettingsView from './views/admin/AdminDonationSettingsView.vue'
 import AdminReportsView from './views/admin/AdminReportsView.vue'
@@ -27,6 +28,7 @@ const router = createRouter({history:createWebHistory(),routes:[
   {path:'/admin/purposes',component:AdminPurposesView,meta:{requiresAdmin:true}},
   {path:'/admin/receipts',component:AdminReceiptsView,meta:{requiresAdmin:true}},
   {path:'/admin/events',component:AdminEventsView,meta:{requiresAdmin:true}},
+  {path:'/admin/banners',component:AdminBannersView,meta:{requiresAdmin:true}},
   {path:'/admin/website',component:AdminWebsiteView,meta:{requiresAdmin:true}},
   {path:'/admin/donation-settings',component:AdminDonationSettingsView,meta:{requiresAdmin:true}},
   {path:'/admin/reports',component:AdminReportsView,meta:{requiresAdmin:true}},

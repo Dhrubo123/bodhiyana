@@ -3,7 +3,9 @@
 namespace Tests\Feature;
 
 use App\Models\DonationPurpose;
+use App\Models\Banner;
 use App\Models\User;
+use App\Models\WebsiteSetting;
 use App\Models\PaymentSetting;
 use App\Models\Donation;
 use App\Models\Donor;
@@ -43,6 +45,30 @@ class AdminManagementTest extends TestCase
         ])->assertOk()->assertJsonPath('bihar_name', 'পরীক্ষা বিহার');
     }
 
+    public function test_admin_can_upload_site_logo_and_favicon(): void
+    {
+        Storage::fake('public');
+        $this->actingAs(User::factory()->create());
+
+        $response = $this->post('/api/admin/website', [
+            'settings' => [
+                'bihar_name' => 'বোধিনানা মেডিটেশন সেন্টার',
+                'site_title' => 'Bodhinana Meditation Centre Bangladesh',
+            ],
+            'logo' => UploadedFile::fake()->image('logo.png', 400, 400),
+            'favicon' => UploadedFile::fake()->image('favicon.png', 64, 64),
+        ])->assertOk();
+
+        $this->assertNotNull($response->json('logo_url'));
+        $this->assertNotNull($response->json('favicon_url'));
+        Storage::disk('public')->assertExists(WebsiteSetting::where('key', 'logo_path')->value('value'));
+        Storage::disk('public')->assertExists(WebsiteSetting::where('key', 'favicon_path')->value('value'));
+
+        $this->getJson('/api/website-settings')
+            ->assertOk()
+            ->assertJsonPath('site_title', 'Bodhinana Meditation Centre Bangladesh');
+    }
+
     public function test_management_endpoints_are_protected(): void
     {
         $this->getJson('/api/admin/donors')->assertUnauthorized();
@@ -53,7 +79,7 @@ class AdminManagementTest extends TestCase
     {
         $this->actingAs(User::factory()->create());
 
-        foreach (['donors', 'purposes', 'events', 'website', 'donation-settings', 'receipts', 'reports'] as $module) {
+        foreach (['donors', 'purposes', 'events', 'banners', 'website', 'donation-settings', 'receipts', 'reports'] as $module) {
             $this->getJson('/api/admin/'.$module)->assertOk();
         }
     }
@@ -73,6 +99,32 @@ class AdminManagementTest extends TestCase
         $path = $response->json('qr_code_path');
         $this->assertNotNull($path);
         Storage::disk('public')->assertExists($path);
+    }
+
+    public function test_admin_can_manage_a_homepage_banner(): void
+    {
+        Storage::fake('public');
+        $this->actingAs(User::factory()->create());
+
+        $response = $this->post('/api/admin/banners', [
+            'title_bn' => 'শান্তি ও সম্প্রীতির পথে',
+            'title_en' => 'A Path of Peace',
+            'subtitle_bn' => 'আমাদের ধ্যান কেন্দ্রে আপনাকে স্বাগতম।',
+            'button_text' => 'দান করুন',
+            'button_link' => '/donate',
+            'display_order' => 1,
+            'is_active' => '1',
+            'desktop_image' => UploadedFile::fake()->image('desktop.jpg', 1600, 600),
+            'mobile_image' => UploadedFile::fake()->image('mobile.jpg', 750, 1000),
+        ])->assertCreated();
+
+        $banner = Banner::findOrFail($response->json('id'));
+        Storage::disk('public')->assertExists($banner->desktop_image);
+        Storage::disk('public')->assertExists($banner->mobile_image);
+        $this->getJson('/api/banners')->assertOk()->assertJsonPath('0.title_en', 'A Path of Peace');
+
+        $this->deleteJson('/api/admin/banners/'.$banner->id)->assertOk();
+        $this->assertDatabaseMissing('banners', ['id' => $banner->id]);
     }
 
     public function test_admin_can_confirm_a_pending_donation_only_once(): void

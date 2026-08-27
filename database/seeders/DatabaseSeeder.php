@@ -27,6 +27,6 @@ class DatabaseSeeder extends Seeder
         foreach ([['সাধারণ দান', 'General Donation'], ['সংঘ দান', 'Sangha Dana'], ['বিহার উন্নয়ন', 'Bihar Development'], ['খাদ্য দান', 'Food Dana']] as $i => [$bn, $en]) DonationPurpose::updateOrCreate(['name_bn'=>$bn], ['name_en'=>$en, 'sort_order'=>$i]);
         BankAccount::updateOrCreate(['account_number'=>'000000000000'], ['bank_name'=>'Sample Bank PLC','account_name'=>'Bihar Donation Account','branch_name'=>'Main Branch','instructions'=>'Replace this sample account in the admin dashboard.','is_active'=>false]);
         foreach (['bkash','nagad'] as $method) PaymentSetting::updateOrCreate(['method'=>$method], ['account_type'=>'Personal','instructions'=>'Configure payment details in the admin dashboard.','is_active'=>false]);
-        foreach (['bihar_name'=>'আপনার বৌদ্ধ বিহার','contact_phone'=>'','address'=>'বাংলাদেশ'] as $key => $value) WebsiteSetting::updateOrCreate(['key'=>$key], ['value'=>$value]);
+        foreach (['bihar_name'=>'আপনার বৌদ্ধ বিহার','site_title'=>'বৌদ্ধ বিহার | দান ব্যবস্থাপনা','contact_phone'=>'','address'=>'বাংলাদেশ'] as $key => $value) WebsiteSetting::updateOrCreate(['key'=>$key], ['value'=>$value]);
     }
 }

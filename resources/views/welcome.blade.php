@@ -4,7 +4,8 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <title>বৌদ্ধ বিহার | দান ব্যবস্থাপনা</title>
+    <title>{{ $siteTitle }}</title>
+    @if($faviconUrl)<link rel="icon" href="{{ $faviconUrl }}">@endif
     @vite(['resources/css/app.css', 'resources/css/mobile.css', 'resources/css/admin.css', 'resources/js/app.js'])
 </head>
 <body><div id="app"></div></body>

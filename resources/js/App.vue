@@ -1,10 +1,35 @@
 <script setup>
-import { computed, ref, watch } from 'vue'
+import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 
 const route = useRoute()
 const menuOpen = ref(false)
 const isAdmin = computed(() => route.path.startsWith('/admin'))
+const site = reactive({
+  bihar_name: 'আপনার বৌদ্ধ বিহার',
+  site_title: 'বৌদ্ধ বিহার | দান ব্যবস্থাপনা',
+  logo_url: null,
+  favicon_url: null,
+})
+
+onMounted(async () => {
+  try {
+    Object.assign(site, await fetch('/api/website-settings').then(response => response.json()))
+    document.title = site.site_title || site.bihar_name
+
+    if (site.favicon_url) {
+      let favicon = document.querySelector("link[rel~='icon']")
+      if (!favicon) {
+        favicon = document.createElement('link')
+        favicon.rel = 'icon'
+        document.head.appendChild(favicon)
+      }
+      favicon.href = site.favicon_url
+    }
+  } catch {
+    // Keep the built-in identity if public settings are temporarily unavailable.
+  }
+})
 
 watch(() => route.fullPath, () => {
   menuOpen.value = false
@@ -15,9 +40,10 @@ watch(() => route.fullPath, () => {
   <template v-if="!isAdmin">
     <header class="site-header">
       <RouterLink class="brand" to="/" aria-label="বৌদ্ধ বিহার হোমপেজ">
-        <span aria-hidden="true">☸</span>
+        <img v-if="site.logo_url" :src="site.logo_url" :alt="`${site.bihar_name} logo`">
+        <span v-else aria-hidden="true">☸</span>
         <div>
-          <b>আপনার বৌদ্ধ বিহার</b>
+          <b>{{ site.bihar_name }}</b>
           <small>Buddhist Bihar</small>
         </div>
       </RouterLink>
@@ -48,6 +74,7 @@ watch(() => route.fullPath, () => {
 
   <footer v-if="!isAdmin">
     <span aria-hidden="true">☸</span>
-    <p>সকলের মঙ্গল হোক।<br><small>© {{ new Date().getFullYear() }} আপনার বৌদ্ধ বিহার</small></p>
+    <p>সকলের মঙ্গল হোক।<br><small>© {{ new Date().getFullYear() }} {{ site.bihar_name }}</small></p>
+    <p class="developer-credit">Developed By Aparup Barua</p>
   </footer>
 </template>

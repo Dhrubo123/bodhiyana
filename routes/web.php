@@ -4,7 +4,9 @@ use App\Http\Controllers\Admin\AdminAuthController;
 use App\Http\Controllers\Admin\AdminDashboardController;
 use App\Http\Controllers\Admin\AdminManagementController;
 use App\Http\Controllers\ReceiptController;
+use App\Models\WebsiteSetting;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Schema;
 
 Route::prefix('api/admin')->group(function () {
     Route::post('login', [AdminAuthController::class, 'login'])->middleware('throttle:5,1');
@@ -27,8 +29,13 @@ Route::prefix('api/admin')->group(function () {
         Route::post('events', [AdminManagementController::class, 'storeEvent']);
         Route::put('events/{event}', [AdminManagementController::class, 'updateEvent']);
         Route::delete('events/{event}', [AdminManagementController::class, 'destroyEvent']);
+        Route::get('banners', [AdminManagementController::class, 'banners']);
+        Route::post('banners', [AdminManagementController::class, 'storeBanner']);
+        Route::post('banners/{banner}', [AdminManagementController::class, 'updateBanner']);
+        Route::delete('banners/{banner}', [AdminManagementController::class, 'destroyBanner']);
         Route::get('website', [AdminManagementController::class, 'website']);
         Route::put('website', [AdminManagementController::class, 'updateWebsite']);
+        Route::post('website', [AdminManagementController::class, 'updateWebsite']);
         Route::get('donation-settings', [AdminManagementController::class, 'donationSettings']);
         Route::put('payment-settings/{setting}', [AdminManagementController::class, 'updatePaymentSetting']);
         Route::post('payment-settings/{setting}', [AdminManagementController::class, 'updatePaymentSetting']);
@@ -41,4 +48,12 @@ Route::prefix('api/admin')->group(function () {
     });
 });
 
-Route::view('/{any?}', 'welcome')->where('any', '.*');
+Route::get('/{any?}', function () {
+    $settings = Schema::hasTable('website_settings')
+        ? WebsiteSetting::whereIn('key', ['site_title', 'bihar_name', 'favicon_path'])->pluck('value', 'key')
+        : collect();
+    return view('welcome', [
+        'siteTitle' => $settings['site_title'] ?? $settings['bihar_name'] ?? 'বৌদ্ধ বিহার | দান ব্যবস্থাপনা',
+        'faviconUrl' => empty($settings['favicon_path']) ? null : '/storage/'.ltrim($settings['favicon_path'], '/'),
+    ]);
+})->where('any', '.*');
