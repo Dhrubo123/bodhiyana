@@ -28,6 +28,7 @@ const navigation = [
     links: [
       { icon: '◫', label: 'ইভেন্ট', to: '/admin/events' },
       { icon: '▧', label: 'ব্যানার', to: '/admin/banners' },
+      { icon: '▦', label: 'গ্যালারি', to: '/admin/gallery' },
       { icon: '⚙', label: 'ওয়েবসাইট', to: '/admin/website' },
       { icon: '⌁', label: 'দান সেটিংস', to: '/admin/donation-settings' },
       { icon: '▱', label: 'রিপোর্ট', to: '/admin/reports' },

@@ -33,6 +33,10 @@ Route::prefix('api/admin')->group(function () {
         Route::post('banners', [AdminManagementController::class, 'storeBanner']);
         Route::post('banners/{banner}', [AdminManagementController::class, 'updateBanner']);
         Route::delete('banners/{banner}', [AdminManagementController::class, 'destroyBanner']);
+        Route::get('gallery', [AdminManagementController::class, 'gallery']);
+        Route::post('gallery', [AdminManagementController::class, 'storeGalleryImage']);
+        Route::post('gallery/{galleryImage}', [AdminManagementController::class, 'updateGalleryImage']);
+        Route::delete('gallery/{galleryImage}', [AdminManagementController::class, 'destroyGalleryImage']);
         Route::get('website', [AdminManagementController::class, 'website']);
         Route::put('website', [AdminManagementController::class, 'updateWebsite']);
         Route::post('website', [AdminManagementController::class, 'updateWebsite']);

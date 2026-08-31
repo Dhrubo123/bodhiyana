@@ -9,6 +9,7 @@ use App\Models\WebsiteSetting;
 use App\Models\PaymentSetting;
 use App\Models\Donation;
 use App\Models\Donor;
+use App\Models\Event;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
@@ -61,12 +62,32 @@ class AdminManagementTest extends TestCase
 
         $this->assertNotNull($response->json('logo_url'));
         $this->assertNotNull($response->json('favicon_url'));
-        Storage::disk('public')->assertExists(WebsiteSetting::where('key', 'logo_path')->value('value'));
+        $logoPath = WebsiteSetting::where('key', 'logo_path')->value('value');
+        Storage::disk('public')->assertExists($logoPath);
         Storage::disk('public')->assertExists(WebsiteSetting::where('key', 'favicon_path')->value('value'));
+
+        $this->get('/api/website-assets/'.$logoPath)->assertOk()->assertHeader('content-type', 'image/png');
 
         $this->getJson('/api/website-settings')
             ->assertOk()
             ->assertJsonPath('site_title', 'Bodhinana Meditation Centre Bangladesh');
+    }
+
+    public function test_admin_can_manage_homepage_gallery_and_public_event_ticker(): void
+    {
+        Storage::fake('public');
+        $this->actingAs(User::factory()->create());
+
+        $gallery = $this->post('/api/admin/gallery', [
+            'title_bn' => 'বুদ্ধ পূর্ণিমা', 'title_en' => 'Buddha Purnima', 'display_order' => 1, 'is_active' => true,
+            'image' => UploadedFile::fake()->image('ceremony.jpg', 1200, 800),
+        ])->assertCreated()->json();
+
+        $this->getJson('/api/gallery')->assertOk()->assertJsonPath('0.title_bn', 'বুদ্ধ পূর্ণিমা');
+        $this->get($gallery['image_url'])->assertOk()->assertHeader('content-type', 'image/jpeg');
+
+        Event::create(['title_bn' => 'প্রবারণা পূর্ণিমা', 'event_date' => today()->addDay(), 'event_time' => '18:00', 'is_active' => true]);
+        $this->getJson('/api/events')->assertOk()->assertJsonPath('0.title_bn', 'প্রবারণা পূর্ণিমা');
     }
 
     public function test_management_endpoints_are_protected(): void
@@ -79,7 +100,7 @@ class AdminManagementTest extends TestCase
     {
         $this->actingAs(User::factory()->create());
 
-        foreach (['donors', 'purposes', 'events', 'banners', 'website', 'donation-settings', 'receipts', 'reports'] as $module) {
+        foreach (['donors', 'purposes', 'events', 'banners', 'gallery', 'website', 'donation-settings', 'receipts', 'reports'] as $module) {
             $this->getJson('/api/admin/'.$module)->assertOk();
         }
     }

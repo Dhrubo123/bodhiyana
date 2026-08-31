@@ -12,9 +12,11 @@ const site = reactive({
   favicon_url: null,
 })
 
-onMounted(async () => {
+async function refreshSiteIdentity() {
   try {
-    Object.assign(site, await fetch('/api/website-settings').then(response => response.json()))
+    const response = await fetch(`/api/website-settings?updated=${Date.now()}`, { cache: 'no-store' })
+    if (!response.ok) return
+    Object.assign(site, await response.json())
     document.title = site.site_title || site.bihar_name
 
     if (site.favicon_url) {
@@ -29,6 +31,14 @@ onMounted(async () => {
   } catch {
     // Keep the built-in identity if public settings are temporarily unavailable.
   }
+}
+
+onMounted(() => {
+  if (!isAdmin.value) refreshSiteIdentity()
+})
+
+watch(isAdmin, (adminArea, wasAdminArea) => {
+  if (!adminArea && wasAdminArea) refreshSiteIdentity()
 })
 
 watch(() => route.fullPath, () => {

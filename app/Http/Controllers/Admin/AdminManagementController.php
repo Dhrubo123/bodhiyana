@@ -10,6 +10,7 @@ use App\Models\Donation;
 use App\Models\DonationPurpose;
 use App\Models\Donor;
 use App\Models\Event;
+use App\Models\GalleryImage;
 use App\Models\PaymentSetting;
 use App\Models\WebsiteSetting;
 use Illuminate\Http\JsonResponse;
@@ -73,6 +74,40 @@ class AdminManagementController extends Controller
     public function banners(): JsonResponse
     {
         return response()->json(Banner::orderBy('display_order')->latest()->get());
+    }
+
+    public function gallery(): JsonResponse
+    {
+        return response()->json(GalleryImage::orderBy('display_order')->latest()->get());
+    }
+
+    public function storeGalleryImage(Request $request): JsonResponse
+    {
+        $data = $this->galleryData($request, true);
+        $data['image_path'] = $request->file('image')->store('gallery', 'public');
+        $image = GalleryImage::create($data);
+        $this->log($request, 'gallery_image_created', $image, 'Gallery image added');
+        return response()->json($image, 201);
+    }
+
+    public function updateGalleryImage(Request $request, GalleryImage $galleryImage): JsonResponse
+    {
+        $data = $this->galleryData($request, false);
+        if ($request->hasFile('image')) {
+            Storage::disk('public')->delete($galleryImage->image_path);
+            $data['image_path'] = $request->file('image')->store('gallery', 'public');
+        }
+        $galleryImage->update($data);
+        $this->log($request, 'gallery_image_updated', $galleryImage, 'Gallery image updated');
+        return response()->json($galleryImage->fresh());
+    }
+
+    public function destroyGalleryImage(Request $request, GalleryImage $galleryImage): JsonResponse
+    {
+        Storage::disk('public')->delete($galleryImage->image_path);
+        $this->log($request, 'gallery_image_deleted', $galleryImage, 'Gallery image deleted');
+        $galleryImage->delete();
+        return response()->json(['message' => 'গ্যালারির ছবি মুছে ফেলা হয়েছে।']);
     }
 
     public function storeBanner(Request $request): JsonResponse
@@ -271,6 +306,17 @@ class AdminManagementController extends Controller
         ]);
     }
 
+    private function galleryData(Request $request, bool $creating): array
+    {
+        return $request->validate([
+            'title_bn' => ['nullable', 'string', 'max:200'],
+            'title_en' => ['nullable', 'string', 'max:200'],
+            'display_order' => ['required', 'integer', 'min:0'],
+            'is_active' => ['required', 'boolean'],
+            'image' => [$creating ? 'required' : 'nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
+        ]);
+    }
+
     private function bankData(Request $request): array
     {
         return $request->validate(['bank_name' => ['required', 'string', 'max:150'], 'account_name' => ['required', 'string', 'max:150'], 'account_number' => ['required', 'string', 'max:100'], 'branch_name' => ['nullable', 'string', 'max:150'], 'routing_number' => ['nullable', 'string', 'max:100'], 'swift_code' => ['nullable', 'string', 'max:50'], 'instructions' => ['nullable', 'string', 'max:2000'], 'display_order' => ['required', 'integer', 'min:0'], 'is_active' => ['required', 'boolean']]);
@@ -304,6 +350,7 @@ class AdminManagementController extends Controller
 
     private function websiteAssetUrl(?string $path): ?string
     {
-        return $path ? '/storage/'.ltrim($path, '/') : null;
+        if (! $path || ! Storage::disk('public')->exists($path)) return null;
+        return '/api/website-assets/'.ltrim($path, '/').'?v='.Storage::disk('public')->lastModified($path);
     }
 }

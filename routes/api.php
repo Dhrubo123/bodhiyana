@@ -6,7 +6,11 @@ use Illuminate\Support\Facades\Route;
 
 Route::get('donation-settings', [PublicDonationController::class, 'settings']);
 Route::get('website-settings', [PublicDonationController::class, 'websiteSettings']);
+Route::get('website-assets/{path}', [PublicDonationController::class, 'websiteAsset'])->where('path', '.*');
 Route::get('banners', [PublicDonationController::class, 'banners']);
+Route::get('events', [PublicDonationController::class, 'events']);
+Route::get('gallery', [PublicDonationController::class, 'gallery']);
+Route::get('gallery-assets/{path}', [PublicDonationController::class, 'galleryAsset'])->where('path', '.*');
 Route::get('donation-purposes', [PublicDonationController::class, 'purposes']);
 Route::post('donations', [PublicDonationController::class, 'store'])->middleware('throttle:10,1');
 Route::post('donation-status', [PublicDonationController::class, 'status'])->middleware('throttle:5,1');
