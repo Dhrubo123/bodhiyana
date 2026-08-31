@@ -23,7 +23,7 @@ class AdminManagementController extends Controller
 {
     private const WEBSITE_TEXT_KEYS = [
         'bihar_name', 'site_title', 'bihar_description', 'bihar_history', 'activities',
-        'address', 'contact_phone', 'email', 'facebook', 'youtube', 'google_maps',
+        'address', 'contact_phone', 'whatsapp_number', 'email', 'facebook', 'youtube', 'google_maps',
     ];
 
     public function donors(Request $request): JsonResponse

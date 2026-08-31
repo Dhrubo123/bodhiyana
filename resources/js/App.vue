@@ -10,6 +10,11 @@ const site = reactive({
   site_title: 'বৌদ্ধ বিহার | দান ব্যবস্থাপনা',
   logo_url: null,
   favicon_url: null,
+  whatsapp_number: null,
+})
+const whatsappUrl = computed(() => {
+  const number = String(site.whatsapp_number ?? '').replace(/\D/g, '')
+  return number ? `https://wa.me/${number}` : null
 })
 
 async function refreshSiteIdentity() {
@@ -81,6 +86,8 @@ watch(() => route.fullPath, () => {
   </template>
 
   <main><RouterView /></main>
+
+  <a v-if="!isAdmin && whatsappUrl" class="floating-whatsapp" :href="whatsappUrl" target="_blank" rel="noopener noreferrer" aria-label="WhatsApp এ যোগাযোগ করুন" title="WhatsApp এ যোগাযোগ করুন">☏<span>WhatsApp</span></a>
 
   <footer v-if="!isAdmin">
     <span aria-hidden="true">☸</span>

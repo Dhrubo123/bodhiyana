@@ -15,7 +15,7 @@ const removeFavicon = ref(false)
 const assets = reactive({ logo_url: null, favicon_url: null })
 const form = reactive({
     bihar_name: '', site_title: '', bihar_description: '', bihar_history: '', activities: '',
-    address: '', contact_phone: '', email: '', facebook: '', youtube: '', google_maps: '',
+    address: '', contact_phone: '', whatsapp_number: '', email: '', facebook: '', youtube: '', google_maps: '',
 })
 
 onMounted(async () => applyResponse(await adminJson('/api/admin/website')))
@@ -121,7 +121,8 @@ async function save() {
                 <div class="form-section">
                     <h2>যোগাযোগ</h2>
                     <label>ঠিকানা<textarea v-model="form.address" rows="3"></textarea></label>
-                    <div class="two-inputs"><label>ফোন<input v-model="form.contact_phone"></label><label>ইমেইল<input v-model="form.email" type="email"></label></div>
+                    <div class="two-inputs"><label>ফোন<input v-model="form.contact_phone"></label><label>WhatsApp নম্বর<input v-model="form.whatsapp_number" placeholder="8801XXXXXXXXX"></label></div>
+                    <label>ইমেইল<input v-model="form.email" type="email"></label>
                     <label>Facebook URL<input v-model="form.facebook" type="url"></label>
                     <label>YouTube URL<input v-model="form.youtube" type="url"></label>
                     <label>Google Maps লিংক/এম্বেড<input v-model="form.google_maps"></label>
