@@ -5,6 +5,7 @@ import { useRoute } from 'vue-router'
 const route = useRoute()
 const menuOpen = ref(false)
 const isAdmin = computed(() => route.path.startsWith('/admin'))
+const events = ref([])
 const site = reactive({
   bihar_name: 'আপনার বৌদ্ধ বিহার',
   site_title: 'বৌদ্ধ বিহার | দান ব্যবস্থাপনা',
@@ -19,9 +20,13 @@ const whatsappUrl = computed(() => {
 
 async function refreshSiteIdentity() {
   try {
-    const response = await fetch(`/api/website-settings?updated=${Date.now()}`, { cache: 'no-store' })
+    const [response, eventsResponse] = await Promise.all([
+      fetch(`/api/website-settings?updated=${Date.now()}`, { cache: 'no-store' }),
+      fetch('/api/events', { cache: 'no-store' }),
+    ])
     if (!response.ok) return
     Object.assign(site, await response.json())
+    events.value = eventsResponse.ok ? await eventsResponse.json() : []
     document.title = site.site_title || site.bihar_name
 
     if (site.favicon_url) {
@@ -83,6 +88,10 @@ watch(() => route.fullPath, () => {
         <RouterLink class="donate-link" to="/donate">🙏 দান করুন</RouterLink>
       </nav>
     </header>
+    <section v-if="events.length" class="event-ticker" aria-label="চলমান অনুষ্ঠান">
+      <div class="ticker-label"><span aria-hidden="true">☸</span><b>ধর্মীয় আয়োজন</b><small>Temple Events</small></div>
+      <div class="ticker-window"><div class="ticker-track"><span v-for="(event, index) in [...events, ...events]" :key="`${event.id}-${index}`"><i aria-hidden="true">✦</i>{{ event.title_bn }} <small>{{ event.event_date }}{{ event.event_time ? ` · ${event.event_time.slice(0, 5)}` : '' }}{{ event.location ? ` · ${event.location}` : '' }}</small></span></div></div>
+    </section>
   </template>
 
   <main><RouterView /></main>
@@ -95,3 +104,7 @@ watch(() => route.fullPath, () => {
     <p class="developer-credit">Developed By Aparup Barua</p>
   </footer>
 </template>
+
+<style scoped>
+.event-ticker{display:flex;min-height:52px;align-items:stretch;overflow:hidden;border-bottom:1px solid #c38a3266;background:linear-gradient(90deg,#102f27,#1b4a3b 50%,#12382e);color:#fff8e9}.ticker-label{position:relative;z-index:1;display:grid;grid-template-columns:28px auto;grid-template-rows:1fr 1fr;align-items:center;column-gap:7px;min-width:182px;padding:7px max(4vw,18px);background:linear-gradient(135deg,#b46f1e,#d3973b);white-space:nowrap}.ticker-label::after{position:absolute;top:0;right:-15px;width:30px;height:100%;background:#d3973b;clip-path:polygon(0 0,50% 50%,0 100%);content:''}.ticker-label span{grid-row:1/3;font-size:25px}.ticker-label b{font-family:'Noto Serif Bengali',serif;font-size:13px}.ticker-label small{font-size:8px}.ticker-window{display:flex;min-width:0;flex:1;align-items:center;overflow:hidden;padding-left:20px}.ticker-track{display:flex;width:max-content;animation:ticker-scroll 34s linear infinite;white-space:nowrap}.ticker-track span{display:inline-flex;align-items:center;gap:8px;padding-right:74px;font-family:'Noto Serif Bengali',serif;font-size:14px}.ticker-track i{color:#e8b455;font-style:normal}.ticker-track small{color:#cfe0d5;font-family:'Noto Sans Bengali',sans-serif;font-size:11px}@keyframes ticker-scroll{to{transform:translateX(-50%)}}@media(max-width:760px){.event-ticker{min-height:48px}.ticker-label{min-width:135px;padding:6px 12px;grid-template-columns:23px auto}.ticker-label span{font-size:21px}.ticker-label b{font-size:11px}.ticker-label small{font-size:7px}.ticker-track{animation-duration:26s}.ticker-track span{padding-right:44px;font-size:12px}.ticker-track small{font-size:9px}}
+</style>

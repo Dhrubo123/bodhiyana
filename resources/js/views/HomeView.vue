@@ -2,7 +2,6 @@
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 
 const banners = ref([])
-const events = ref([])
 const gallery = ref([])
 const activeIndex = ref(0)
 const activeBanner = computed(() => banners.value[activeIndex.value] ?? null)
@@ -10,19 +9,17 @@ let rotation
 
 onMounted(async () => {
     try {
-        const [bannerData, eventData, galleryData] = await Promise.all([
+        const [bannerData, galleryData] = await Promise.all([
             fetch('/api/banners').then(response => response.json()),
-            fetch('/api/events').then(response => response.json()),
             fetch('/api/gallery').then(response => response.json()),
         ])
         banners.value = bannerData
-        events.value = eventData
         gallery.value = galleryData
         if (banners.value.length > 1) {
             rotation = window.setInterval(() => { activeIndex.value = (activeIndex.value + 1) % banners.value.length }, 6500)
         }
     } catch {
-        banners.value = []; events.value = []; gallery.value = []
+        banners.value = []; gallery.value = []
     }
 })
 
@@ -30,10 +27,6 @@ onBeforeUnmount(() => window.clearInterval(rotation))
 </script>
 
 <template>
-    <section v-if="events.length" class="event-ticker" aria-label="চলমান অনুষ্ঠান">
-        <div class="ticker-label"><span aria-hidden="true">☸</span><b>ধর্মীয় আয়োজন</b><small>Temple Events</small></div>
-        <div class="ticker-window"><div class="ticker-track"><span v-for="(event, index) in [...events, ...events]" :key="`${event.id}-${index}`"><i aria-hidden="true">✦</i>{{ event.title_bn }} <small>{{ event.event_date }}{{ event.event_time ? ` · ${event.event_time.slice(0, 5)}` : '' }}{{ event.location ? ` · ${event.location}` : '' }}</small></span></div></div>
-    </section>
     <section class="hero" :class="{ 'managed-banner': activeBanner }">
         <picture v-if="activeBanner" class="banner-picture">
             <source v-if="activeBanner.mobile_image_url" media="(max-width: 760px)" :srcset="activeBanner.mobile_image_url">

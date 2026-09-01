@@ -7,6 +7,9 @@ use App\Http\Controllers\ReceiptController;
 use App\Models\WebsiteSetting;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Http\Request;
+
+Route::get('csrf-token', fn (Request $request) => response()->json(['token' => $request->session()->token()]));
 
 Route::prefix('api/admin')->group(function () {
     Route::post('login', [AdminAuthController::class, 'login'])->middleware('throttle:5,1');
