@@ -8,18 +8,17 @@ const activeBanner = computed(() => banners.value[activeIndex.value] ?? null)
 let rotation
 
 onMounted(async () => {
-    try {
-        const [bannerData, galleryData] = await Promise.all([
+    const [bannerResult, galleryResult] = await Promise.allSettled([
             fetch('/api/banners').then(response => response.json()),
             fetch('/api/gallery').then(response => response.json()),
-        ])
-        banners.value = bannerData
-        gallery.value = galleryData
-        if (banners.value.length > 1) {
-            rotation = window.setInterval(() => { activeIndex.value = (activeIndex.value + 1) % banners.value.length }, 6500)
-        }
-    } catch {
-        banners.value = []; gallery.value = []
+    ])
+
+    // A temporary gallery problem should never hide an active homepage banner.
+    banners.value = bannerResult.status === 'fulfilled' && Array.isArray(bannerResult.value) ? bannerResult.value : []
+    gallery.value = galleryResult.status === 'fulfilled' && Array.isArray(galleryResult.value) ? galleryResult.value : []
+
+    if (banners.value.length > 1) {
+        rotation = window.setInterval(() => { activeIndex.value = (activeIndex.value + 1) % banners.value.length }, 6500)
     }
 })
 
@@ -33,10 +32,8 @@ onBeforeUnmount(() => window.clearInterval(rotation))
             <img :src="activeBanner.desktop_image_url" :alt="activeBanner.title_bn">
         </picture>
         <div class="banner-shade"></div>
-        <div class="hero-content">
+        <div v-if="!activeBanner || activeBanner.subtitle_bn || (activeBanner.button_text && activeBanner.button_link)" class="hero-content">
             <template v-if="activeBanner">
-                <p v-if="activeBanner.title_en" class="eyebrow">{{ activeBanner.title_en }}</p>
-                <h1>{{ activeBanner.title_bn }}</h1>
                 <p v-if="activeBanner.subtitle_bn">{{ activeBanner.subtitle_bn }}</p>
                 <div v-if="activeBanner.button_text && activeBanner.button_link" class="hero-actions">
                     <a :href="activeBanner.button_link" class="button primary">{{ activeBanner.button_text }}</a>
@@ -63,12 +60,15 @@ onBeforeUnmount(() => window.clearInterval(rotation))
 </template>
 
 <style scoped>
-.managed-banner { isolation: isolate; min-height: 560px; background: #173c32; }
+.managed-banner { isolation: isolate; min-height: 0; height: min(50vw, 780px); background: #183e33; }
 .banner-picture,.banner-picture img,.banner-shade { position: absolute; inset: 0; width: 100%; height: 100%; }
 .banner-picture { z-index: -2; }
-.banner-picture img { object-fit: cover; }
-.banner-shade { z-index: -1; background: linear-gradient(90deg, rgba(11,36,29,.88) 0%, rgba(15,42,33,.62) 48%, rgba(13,34,28,.22) 100%); }
-.managed-banner .hero-content { max-width: 760px; }
+.banner-picture img { object-fit: cover; object-position: center; }
+.banner-shade { z-index: -1; background: linear-gradient(90deg, rgba(8,35,27,.26) 0%, rgba(8,35,27,.12) 48%, rgba(8,35,27,.05) 100%); }
+.managed-banner .hero-content { max-width: 470px; padding: clamp(22px, 2.5vw, 38px); border: 1px solid #fff5; border-left: 4px solid #d69b3b; border-radius: 0 16px 16px 0; background: linear-gradient(135deg, #12392de8, #1f513ee0); box-shadow: 0 18px 45px #0b241a52; }
+.managed-banner .hero-content p:not(.eyebrow) { margin-bottom: 0; color: #f1f5ed; font-size: clamp(15px, 1.35vw, 18px); }
+.managed-banner .hero-content .eyebrow { color: #f6c66f; }
+.managed-banner .hero-content h1 { font-size: clamp(30px, 3vw, 48px); line-height: 1.25; text-shadow: none; }
 .managed-banner h1 { white-space: pre-line; }
 .banner-dots { position: absolute; z-index: 2; right: max(5vw,24px); bottom: 25px; display: flex; gap: 7px; }
 .banner-dots button { width: 9px; height: 9px; padding: 0; border: 1px solid #fff; border-radius: 50%; background: #ffffff66; cursor: pointer; }
@@ -85,5 +85,5 @@ onBeforeUnmount(() => window.clearInterval(rotation))
 .public-gallery img { display: block; width: 100%; height: 210px; object-fit: cover; transition: transform .3s ease; }.public-gallery figure:hover img { transform: scale(1.04); }
 .public-gallery figcaption { padding:10px 12px; background:#fff; color:#506158; font-size:13px; }
 @keyframes ticker-scroll { from { transform: translateX(0); } to { transform: translateX(-50%); } }
-@media(max-width:760px) { .managed-banner { min-height: calc(100svh - 64px); } .banner-shade { background: linear-gradient(180deg, rgba(10,31,25,.45), rgba(10,33,26,.88)); } .banner-dots { right: 20px; bottom: 18px; } .event-ticker { min-height: 48px; }.ticker-label { min-width: 135px; padding: 6px 12px; grid-template-columns: 23px auto; column-gap: 5px; }.ticker-label span { font-size: 21px; }.ticker-label b { font-size: 11px; }.ticker-label small { font-size: 7px; }.ticker-window { padding-left: 13px; }.ticker-track { animation-duration: 26s; }.ticker-track span { gap: 6px; padding-right: 44px; font-size: 12px; }.ticker-track small { font-size: 9px; } .public-gallery { grid-template-columns: 1fr 1fr; gap: 10px; } .public-gallery figure,.public-gallery img { min-height: 145px; height: 145px; } }
+@media(max-width:760px) { .managed-banner { display: block; height: auto; min-height: 0; padding: 0; background: #173d31; } .managed-banner .banner-picture { position: relative; display: block; aspect-ratio: 2 / 1; } .managed-banner .banner-picture img { position: static; display: block; object-fit: cover; } .managed-banner .banner-shade { display: none; } .managed-banner .hero-content { max-width: none; padding: 25px 20px 30px; border: 0; border-top: 3px solid #d69b3b; border-radius: 0; background: linear-gradient(135deg, #12382d, #245440); box-shadow: none; } .managed-banner .hero-content h1 { margin-bottom: 10px; font-size: clamp(28px, 8vw, 36px); } .managed-banner .hero-content p:not(.eyebrow) { font-size: 15px; line-height: 1.7; } .banner-dots { right: 16px; bottom: 16px; } .event-ticker { min-height: 48px; }.ticker-label { min-width: 135px; padding: 6px 12px; grid-template-columns: 23px auto; column-gap: 5px; }.ticker-label span { font-size: 21px; }.ticker-label b { font-size: 11px; }.ticker-label small { font-size: 7px; }.ticker-window { padding-left: 13px; }.ticker-track { animation-duration: 26s; }.ticker-track span { gap: 6px; padding-right: 44px; font-size: 12px; }.ticker-track small { font-size: 9px; } .public-gallery { grid-template-columns: 1fr 1fr; gap: 10px; } .public-gallery figure,.public-gallery img { min-height: 145px; height: 145px; } }
 </style>

@@ -68,6 +68,8 @@ watch(() => route.fullPath, () => {
         </div>
       </RouterLink>
 
+      <RouterLink class="mobile-donate" to="/donate" aria-label="এখন দান করুন">দান করুন</RouterLink>
+
       <button
         class="menu"
         type="button"

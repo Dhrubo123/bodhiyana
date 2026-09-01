@@ -17,6 +17,10 @@ body {
     justify-content: center;
 }
 
+.mobile-donate {
+    display: none;
+}
+
 @media (max-width: 760px) {
     html {
         scroll-padding-top: 64px;
@@ -53,6 +57,24 @@ body {
         display: inline-flex;
         flex: 0 0 auto;
         padding: 0;
+    }
+
+    .site-header .mobile-donate {
+        display: inline-flex;
+        min-height: 38px;
+        align-items: center;
+        justify-content: center;
+        margin-left: auto;
+        margin-right: 8px;
+        padding: 8px 11px;
+        border-radius: 7px;
+        background: #b66e1d;
+        box-shadow: 0 3px 9px rgb(148 97 33 / 24%);
+        color: #fff;
+        font-family: 'Noto Serif Bengali', serif;
+        font-size: 13px;
+        font-weight: 700;
+        white-space: nowrap;
     }
 
     .site-header nav {
@@ -203,6 +225,12 @@ body {
     .site-header .brand b {
         max-width: 155px;
         font-size: 14px;
+    }
+
+    .site-header .mobile-donate {
+        margin-right: 5px;
+        padding: 8px 8px;
+        font-size: 12px;
     }
 
     .hero {

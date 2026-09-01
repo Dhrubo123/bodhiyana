@@ -13,7 +13,7 @@ const mobileFile = ref(null)
 const desktopPreview = ref(null)
 const mobilePreview = ref(null)
 const removeMobile = ref(false)
-const form = reactive({ title_bn: '', title_en: '', subtitle_bn: '', subtitle_en: '', button_text: '', button_link: '', display_order: 0, is_active: true, start_date: '', end_date: '' })
+const form = reactive({ title_bn: 'হোমপেজ ব্যানার', title_en: '', subtitle_bn: '', subtitle_en: '', button_text: '', button_link: '', display_order: 0, is_active: true, start_date: '', end_date: '' })
 
 async function load() { rows.value = await adminJson('/api/admin/banners') }
 
@@ -31,7 +31,7 @@ function reset() {
     mobileFile.value = null
     removeMobile.value = false
     error.value = ''
-    Object.assign(form, { title_bn: '', title_en: '', subtitle_bn: '', subtitle_en: '', button_text: '', button_link: '', display_order: 0, is_active: true, start_date: '', end_date: '' })
+    Object.assign(form, { title_bn: 'হোমপেজ ব্যানার', title_en: '', subtitle_bn: '', subtitle_en: '', button_text: '', button_link: '', display_order: 0, is_active: true, start_date: '', end_date: '' })
 }
 
 function edit(item) {
@@ -97,7 +97,6 @@ onBeforeUnmount(releasePreviews)
             <section class="panel banner-editor">
                 <div class="panel-head"><div><h2>{{ editing ? 'ব্যানার সম্পাদনা' : 'নতুন ব্যানার' }}</h2><p>ডেস্কটপ ও মোবাইলের জন্য আলাদা ছবি ব্যবহার করতে পারবেন</p></div></div>
                 <form class="management-form" @submit.prevent="save">
-                    <div class="two-inputs"><label>বাংলা শিরোনাম<input v-model="form.title_bn" required></label><label>ইংরেজি শিরোনাম<input v-model="form.title_en"></label></div>
                     <div class="two-inputs"><label>বাংলা বিবরণ<textarea v-model="form.subtitle_bn" rows="3"></textarea></label><label>ইংরেজি বিবরণ<textarea v-model="form.subtitle_en" rows="3"></textarea></label></div>
                     <div class="two-inputs"><label>বাটনের লেখা<input v-model="form.button_text" placeholder="এখন দান করুন"></label><label>বাটনের লিংক<input v-model="form.button_link" placeholder="/donate"></label></div>
                     <div class="banner-upload-grid">
@@ -116,8 +115,8 @@ onBeforeUnmount(releasePreviews)
                 <div class="panel-head"><div><h2>ব্যানার তালিকা</h2><p>{{ rows.length }}টি ব্যানার</p></div></div>
                 <div class="banner-list">
                     <article v-for="item in rows" :key="item.id">
-                        <img :src="item.desktop_image_url" :alt="item.title_bn">
-                        <div><b>{{ item.title_bn }}</b><small>ক্রম: {{ item.display_order }} · {{ item.start_date ? item.start_date.slice(0,10) : 'সবসময়' }} — {{ item.end_date ? item.end_date.slice(0,10) : 'অনির্দিষ্ট' }}</small></div>
+                        <img :src="item.desktop_image_url" alt="ব্যানার ছবি">
+                        <div><b>হোমপেজ ব্যানার</b><small>ক্রম: {{ item.display_order }} · {{ item.start_date ? item.start_date.slice(0,10) : 'সবসময়' }} — {{ item.end_date ? item.end_date.slice(0,10) : 'অনির্দিষ্ট' }}</small></div>
                         <span class="status-pill" :class="item.is_active ? 'confirmed' : 'rejected'">{{ item.is_active ? 'প্রকাশিত' : 'বন্ধ' }}</span>
                         <button @click="edit(item)">সম্পাদনা</button><button class="danger-text" @click="remove(item)">মুছুন</button>
                     </article>
