@@ -1,9 +1,11 @@
 <script setup>
 import { computed, onMounted, reactive, ref } from 'vue'
+import { useRoute } from 'vue-router'
 const settings=ref([]),purposes=ref([]),banks=ref([]),loading=ref(true),success=ref(null),error=ref(''),qrOpen=ref(false),receiptCopied=ref(false)
+const route=useRoute()
 const form=reactive({donor_name:'',mobile:'',amount:'',donation_purpose_id:'',payment_method:'bkash',bank_account_id:'',transaction_id:'',payment_screenshot:null,note:''})
 const activeSetting=computed(()=>settings.value.find(s=>s.method===form.payment_method))
-onMounted(async()=>{try{const[s,p]=await Promise.all([fetch('/api/donation-settings').then(r=>r.json()),fetch('/api/donation-purposes').then(r=>r.json())]);settings.value=s.payment_settings;banks.value=s.bank_accounts;purposes.value=p}finally{loading.value=false}})
+onMounted(async()=>{try{const[s,p]=await Promise.all([fetch('/api/donation-settings').then(r=>r.json()),fetch('/api/donation-purposes').then(r=>r.json())]);settings.value=s.payment_settings;banks.value=s.bank_accounts;purposes.value=p;if(route.query.event_title)form.note=`${route.query.event_title} অনুষ্ঠানের জন্য দান`}finally{loading.value=false}})
 async function submit(){error.value='';const data=new FormData;Object.entries(form).forEach(([k,v])=>{if(v!==null&&v!=='')data.append(k,v)});const r=await fetch('/api/donations',{method:'POST',body:data,headers:{Accept:'application/json'}}),j=await r.json();if(!r.ok){error.value=Object.values(j.errors||{}).flat()[0]||'তথ্য জমা দেওয়া যায়নি।';return}receiptCopied.value=false;success.value=j.donation}
 async function copyNumber(){if(activeSetting.value?.number)await navigator.clipboard.writeText(activeSetting.value.number)}
 async function copyReceipt(){if(success.value?.receipt_number){await navigator.clipboard.writeText(success.value.receipt_number);receiptCopied.value=true}}

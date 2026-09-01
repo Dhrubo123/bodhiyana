@@ -152,20 +152,32 @@ class AdminManagementController extends Controller
 
     public function storeEvent(Request $request): JsonResponse
     {
-        $event = Event::create($this->eventData($request));
+        $data = $this->eventData($request);
+        if ($request->hasFile('image')) $data['image'] = $request->file('image')->store('events', 'public');
+        $event = Event::create($data);
         $this->log($request, 'event_created', $event, 'Event created');
         return response()->json($event, 201);
     }
 
     public function updateEvent(Request $request, Event $event): JsonResponse
     {
-        $event->update($this->eventData($request));
+        $data = $this->eventData($request);
+        if ($request->boolean('remove_image') && $event->image) {
+            Storage::disk('public')->delete($event->image);
+            $data['image'] = null;
+        }
+        if ($request->hasFile('image')) {
+            if ($event->image) Storage::disk('public')->delete($event->image);
+            $data['image'] = $request->file('image')->store('events', 'public');
+        }
+        $event->update($data);
         $this->log($request, 'event_updated', $event, 'Event updated');
         return response()->json($event);
     }
 
     public function destroyEvent(Request $request, Event $event): JsonResponse
     {
+        if ($event->image) Storage::disk('public')->delete($event->image);
         $this->log($request, 'event_deleted', $event, 'Event deleted');
         $event->delete();
         return response()->json(['message' => 'ইভেন্ট মুছে ফেলা হয়েছে।']);
@@ -284,7 +296,7 @@ class AdminManagementController extends Controller
 
     private function eventData(Request $request): array
     {
-        return $request->validate(['title_bn' => ['required', 'string', 'max:200'], 'title_en' => ['nullable', 'string', 'max:200'], 'description' => ['nullable', 'string', 'max:3000'], 'event_date' => ['required', 'date'], 'event_time' => ['nullable', 'date_format:H:i'], 'location' => ['nullable', 'string', 'max:250'], 'is_active' => ['required', 'boolean']]);
+        return $request->validate(['title_bn' => ['required', 'string', 'max:200'], 'title_en' => ['nullable', 'string', 'max:200'], 'description' => ['nullable', 'string', 'max:3000'], 'event_date' => ['required', 'date'], 'event_time' => ['nullable', 'date_format:H:i'], 'location' => ['nullable', 'string', 'max:250'], 'is_active' => ['required', 'boolean'], 'image' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'], 'remove_image' => ['nullable', 'boolean']]);
     }
 
     private function bannerData(Request $request, bool $creating): array

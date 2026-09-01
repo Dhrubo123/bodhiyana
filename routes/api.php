@@ -9,6 +9,8 @@ Route::get('website-settings', [PublicDonationController::class, 'websiteSetting
 Route::get('website-assets/{path}', [PublicDonationController::class, 'websiteAsset'])->where('path', '.*');
 Route::get('banners', [PublicDonationController::class, 'banners']);
 Route::get('events', [PublicDonationController::class, 'events']);
+Route::get('events/{event}', [PublicDonationController::class, 'event']);
+Route::get('event-assets/{path}', [PublicDonationController::class, 'eventAsset'])->where('path', '.*');
 Route::get('gallery', [PublicDonationController::class, 'gallery']);
 Route::get('gallery-assets/{path}', [PublicDonationController::class, 'galleryAsset'])->where('path', '.*');
 Route::get('donation-purposes', [PublicDonationController::class, 'purposes']);
